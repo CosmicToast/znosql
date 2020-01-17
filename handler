@@ -1,0 +1,40 @@
+#!/bin/zsh
+
+# options
+local db=
+local fd=
+while getopts d:f:q name
+do
+    case $name in
+        d) db=:server:nosql:$OPTARG ;;
+        f) fd=$OPTARG ;;
+    esac
+done
+
+# util and cleanup
+zmodload zsh/net/tcp
+trap "ztcp -c $fd" INT TERM
+
+# loop
+local get=
+local getd=
+local line=()
+while [ 1 ]
+do
+    # reset
+    get=
+    getd=
+    line=()
+
+    # parse
+    read -A line <& $fd
+    case $line[1] in # I won't bother verifying # of args, too lazy tbh
+        exit)   break ;;
+        "")     break ;; # broken fd
+        ping)   echo pong >& $fd ;;
+        switch) db=:server:nosql:$line[2] ;;
+        put)    zstyle $db $line[2] "$line[3,-1]" ;;
+        getd)   zstyle -s $db $line[2] getd || getd=$line[3] ;&
+        get)    zstyle -s $db $line[2] get || get=$getd; echo $get >& $fd ;;
+    esac
+done
