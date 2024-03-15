@@ -74,3 +74,12 @@ func (r *Client) Put(key, val string) {
 	query := fmt.Sprintf("put %s %s\n", key, val)
 	fmt.Fprint(r, query)
 }
+
+func (r *Client) Save() {
+	fmt.Fprint(r, "save")
+}
+
+func (r *Client) Shutdown() {
+	fmt.Fprint(r, "shutdown")
+	r.Close()
+}

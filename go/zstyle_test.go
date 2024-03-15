@@ -1,4 +1,4 @@
-// +build zstyle
+//+build zstyle
 
 package gozstyle
 
