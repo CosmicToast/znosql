@@ -1,5 +1,6 @@
-Run ./launcher.
+Run ./znosql (see contents for possible options).
 Connect via netcat.
+Don't forget to `save`!
 /go contains some go code (for benchmarks and api, modify as needed).
 
 Why did I do this?

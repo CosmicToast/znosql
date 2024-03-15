@@ -1,0 +1,80 @@
+#!/bin/zsh
+
+# options
+local p=:server:nosql
+local pdb=$p:db
+local pmd=$p:meta
+local db=$pdb:default
+local port=5050
+local sf=znosql.zdb
+while getopts d:p:s:q name
+do
+    case $name in
+        d) db=$pdb:$OPTARG ;;
+        p) port=$OPTARG ;;
+		s) sf=$OPTARG.zdb ;;
+        q) (( quietflag++ )) ;;
+    esac
+done
+
+# init
+zmodload zsh/net/tcp
+zmodload zsh/zselect
+
+ztcp -l $port
+local pfd=$REPLY
+trap "ztcp -c; exit" EXIT INT
+local -A fds=()
+
+handle() {
+	local db=
+	local get=
+	local line=()
+
+	zstyle -s $pmd:$1 bucket db || db=$pdb:default
+
+	read -A line <& $1
+	case $line[1] in
+		""|exit|quit) # broken pipe / close connection
+			ztcp -c $1
+			zstyle -d $pmd:$1
+			unset "fds[$1]"
+			;;
+		shutdown)
+			ztcp -c
+			exit 0
+			;;
+		ping) echo pong >& $1 ;;
+		switch) zstyle $pmd:$1 bucket $line[2] ;;
+		get)
+			zstyle -s $db $line[2] get || zstyle -s $pmd:$1 defval get
+			echo $get >& $1
+			;;
+		getd)
+			zstyle -s $db $line[2] get || get=$line[3]
+			echo $get >& $1
+			;;
+		put)  zstyle $db $line[2] "$line[3,-1]" ;;
+		putd) zstyle $pmd:$1 defval "$line[2,-1]" ;;
+		save) zstyle -L "$pdb:*" > "$sf" ;;
+		load)
+			zstyle -d
+			source "$sf" ;;
+	esac
+}
+
+[ -r "$sf" ] && source "$sf"
+while [ 1 ]
+do
+	local -A READY=()
+	# wait for an available fd
+	zselect -rA READY ${(@k)fds} $pfd
+	for fd in "${(@k)READY}"; do
+		if [[ $fd = $pfd ]]; then
+			ztcp -a $pfd
+			fds[$REPLY]=1
+			continue
+		fi
+		handle $fd
+	done
+done
