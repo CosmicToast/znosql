@@ -2,18 +2,15 @@
 
 # options
 local p=:server:nosql
-local pdb=$p:db
-local pmd=$p:meta
-local db=$pdb:default
+local db=$p:default
 local port=5050
 local sf=znosql.zdb
-while getopts d:p:s:q name
+while getopts d:p:s: name
 do
     case $name in
-        d) db=$pdb:$OPTARG ;;
+        d) db=$p:$OPTARG ;;
         p) port=$OPTARG ;;
 		s) sf=$OPTARG.zdb ;;
-        q) (( quietflag++ )) ;;
     esac
 done
 
@@ -25,38 +22,37 @@ ztcp -l $port
 local pfd=$REPLY
 trap "ztcp -c; exit" EXIT INT
 local -A fds=()
+local -A val=() # default values
 
 handle() {
-	local db=
 	local get=
 	local line=()
-
-	zstyle -s $pmd:$1 bucket db || db=$pdb:default
 
 	read -A line <& $1
 	case $line[1] in
 		""|exit|quit) # broken pipe / close connection
 			ztcp -c $1
-			zstyle -d $pmd:$1
 			unset "fds[$1]"
+			unset "val[$1]"
 			;;
 		shutdown)
 			ztcp -c
 			exit 0
 			;;
 		ping) echo pong >& $1 ;;
-		switch) zstyle $pmd:$1 bucket $line[2] ;;
+		switch) fds[$1]=$line[2] ;;
 		get)
-			zstyle -s $db $line[2] get || zstyle -s $pmd:$1 defval get
+			zstyle -s $2 $line[2] get || get=$val[$1]
 			echo $get >& $1
 			;;
 		getd)
-			zstyle -s $db $line[2] get || get=$line[3]
+			zstyle -s $2 $line[2] get || get=$line[3]
 			echo $get >& $1
 			;;
-		put)  zstyle $db $line[2] "$line[3,-1]" ;;
-		putd) zstyle $pmd:$1 defval "$line[2,-1]" ;;
-		save) zstyle -L "$pdb:*" > "$sf" ;;
+		put)  zstyle $2 $line[2] "$line[3,-1]" ;;
+		putd) val[$1]="$line[2,-1]" ;;
+		dump) zstyle -L "$p:*" ;;
+		save) zstyle -L "$p:*" > "$sf" ;;
 		load)
 			zstyle -d
 			source "$sf" ;;
@@ -72,9 +68,9 @@ do
 	for fd in "${(@k)READY}"; do
 		if [[ $fd = $pfd ]]; then
 			ztcp -a $pfd
-			fds[$REPLY]=1
+			fds[$REPLY]=$db
 			continue
 		fi
-		handle $fd
+		handle $fd "$fds[$fd]"
 	done
 done
