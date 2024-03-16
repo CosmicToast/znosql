@@ -7,11 +7,11 @@ local port=5050
 local sf=znosql.zdb
 while getopts d:p:s: name
 do
-    case $name in
-        d) db=$p:$OPTARG ;;
-        p) port=$OPTARG ;;
+	case $name in
+		d) db=$p:$OPTARG ;;
+		p) port=$OPTARG ;;
 		s) sf=$OPTARG.zdb ;;
-    esac
+	esac
 done
 
 # init
