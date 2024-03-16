@@ -1,4 +1,4 @@
-module gont-use-this-lol.example.com/gozstyle
+module dont-use-this-lol.example.com/gozstyle
 
 go 1.22.1
 
