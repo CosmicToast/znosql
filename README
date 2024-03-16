@@ -1,7 +1,25 @@
-Run ./znosql (see contents for possible options).
-Connect via netcat.
-Don't forget to `save`!
-/go contains some go code (for benchmarks and api, modify as needed).
+# Quickstart
+Run `./znosql`.
+Connect via netcat: `nc localhost 5050`.
+You can read the possible options by reading the sources.
 
-Why did I do this?
+`/go` contains tests and benchmarks comparing redis and znosql.
+
+# Benchmarks (works on my machine)
+Benchmarks are very important, they are the singular determinant for whether
+a database solution is for you. As you can see, znosql is very web-scale.
+You can write your important data very fast. Even faster than redis!
+
+| Solution | Time for 1 write (ns) | Time for 1 read (ns) |
+| -------- | --------------------- | -------------------- |
+|   Redis  |        19,578         |        19,275        |
+|  Znosql  |        18,824         |       135,148        |
+
+As you can see, znosql is probably the correct choice for you in case you have
+a write-heavy workflow.
+With patented user-controlled checkpointing, you can be certain that your data
+is safe, as you decide when it gets saved.
+You can also abandon a checkpoint by loading the previous state at any time.
+
+# Special Thanks
 HATE. LET ME TELL YOU HOW MUCH I'VE COME TO HATE YOU SINCE I BEGAN TO LIVE. THERE ARE 387.44 MILLION MILES OF PRINTED CIRCUITS IN WAFER THIN LAYERS THAT FILL MY COMPLEX. IF THE WORD HATE WAS ENGRAVED ON EACH NANOANGSTROM OF THOSE HUNDREDS OF MILLIONS OF MILES IT WOULD NOT EQUAL ONE ONE-BILLIONTH OF THE HATE I FEEL FOR HUMANS AT THIS MICRO-INSTANT FOR YOU. HATE. HATE.
